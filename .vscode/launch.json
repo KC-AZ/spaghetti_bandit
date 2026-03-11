@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Spaghetti Bandit (Platformer)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/platformer.py",
+            "python": "${workspaceFolder}/venv/bin/python",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Spaghetti Bandit (Original / Ursina)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/game.py",
+            "python": "${workspaceFolder}/venv/bin/python",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

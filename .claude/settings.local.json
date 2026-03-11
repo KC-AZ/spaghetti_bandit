@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/home/zack/spaghetti_bandit/venv/bin/pip list:*)",
+      "Bash(venv/bin/python -c \"import ast; ast.parse\\(open\\(''platformer.py''\\).read\\(\\)\\); print\\(''Syntax OK''\\)\")",
+      "Bash(ls -lh /home/zack/spaghetti_bandit/*.py)"
+    ]
+  }
+}
