@@ -17,8 +17,9 @@ game_manager      = None
 cars            = []
 coins_list      = []
 helicopters     = []
-charging_drones = []
-shooting_drones = []
+charging_drones   = []
+shooting_drones   = []
+drone_projectiles = []
 
 # ── Game variables ────────────────────────────────────────────────────────
 score        = 0.0
@@ -60,15 +61,30 @@ def _destroy(ent):
 # ── Rope visual ───────────────────────────────────────────────────────────
 def update_rope(p1, p2):
     global rope_entity
-    dx, dy = p2.x - p1.x, p2.y - p1.y
-    dist   = math.sqrt(dx * dx + dy * dy)
+    _destroy(rope_entity)
+    rope_entity = None
+    dx = p2.x - p1.x
+    dy = p2.y - p1.y
+    dist = math.sqrt(dx * dx + dy * dy)
     if dist < 0.01:
         return
-    if rope_entity is None:
-        rope_entity = Entity(model='quad', color=color.white, z=-0.1)
-    rope_entity.position   = Vec3((p1.x + p2.x) / 2, (p1.y + p2.y) / 2, -0.1)
-    rope_entity.scale      = Vec3(dist, 0.07, 1)
-    rope_entity.rotation_z = math.degrees(math.atan2(dy, dx))
+    # Perpendicular unit vector for rope thickness (no rotation needed)
+    thickness = 0.15
+    px = -dy / dist * thickness
+    py =  dx / dist * thickness
+    # Build quad directly in world space — entity sits at origin with no rotation
+    verts = [
+        Vec3(p1.x - px, p1.y - py, -0.1),
+        Vec3(p1.x + px, p1.y + py, -0.1),
+        Vec3(p2.x + px, p2.y + py, -0.1),
+        Vec3(p2.x - px, p2.y - py, -0.1),
+    ]
+    rope_entity = Entity(
+        model=Mesh(vertices=verts, triangles=[0, 1, 2, 0, 2, 3]),
+        color=color.rgb(60, 35, 10),   # dark brown — visible against sky and ground
+        double_sided=True,
+        unlit=True,
+    )
 
 def clear_rope():
     global rope_entity

@@ -39,7 +39,7 @@ def collect_coin(coin_ent):
 
 def _reset_game():
     for lst in (state.cars, state.coins_list, state.helicopters,
-                state.charging_drones, state.shooting_drones):
+                state.charging_drones, state.shooting_drones, state.drone_projectiles):
         for e in lst:
             state._destroy(e)
         lst.clear()
@@ -57,12 +57,20 @@ def start_game():
     _reset_game()
     ui.create_hud()
     p            = state.player
-    p.position   = Vec3(PLAYER_X, GROUND_Y + p.scale_y / 2, 0)
+    p.position   = Vec3(PLAYER_X, GROUND_Y + 0.5 + p.scale_y / 2, 0)
+    p.vel_x      = 0.0
     p.vel_y      = 0.0
     p.on_ground  = True
     p.alive      = True
-    p.grappling       = False
-    p.grapple_anchor  = None
+    p.grappling          = False
+    p.grapple_anchor     = None
+    p.jumps_remaining    = 2
+    p.jump_buffer        = 0.0
+    p.coyote_timer       = 0.0
+    p.parry_active    = False
+    p.parry_timer     = 0.0
+    p.parry_cooldown  = 0.0
+    p.color           = color.white
     p.enable()
     state.game_running = True
     state.audio.play_music()
@@ -82,6 +90,8 @@ def input(key):
         state.player.start_grapple()
     if key == 'f up':
         state.player.release_grapple()
+    if key == 'd' and state.game_running and not state.paused:
+        state.player.do_parry()
 
 
 # ── Game manager ──────────────────────────────────────────────────────────
@@ -131,9 +141,9 @@ class GameManager(Entity):
         camera.x       = state.player.x + CAMERA_OFFSET
         state.ground.x = camera.x
 
-        # Parallax — higher multiplier makes near layers feel faster
+        # Parallax — later layers are closer (lower z) and move faster
         for i, layer in enumerate(state.background_layers):
-            spd = state.scroll_speed * 0.7 / (i + 1)
+            spd = state.scroll_speed * 0.12 * (i + 1)
             for bg in layer:
                 bg.x -= spd * time.dt
                 if bg.x + bg.scale_x / 2 <= camera.x - camera.fov / 2 - bg.scale_x / 2:

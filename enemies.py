@@ -18,6 +18,15 @@ class DroneProjectile(Entity):
             position=start_pos,
             collider='box', name='drone_projectile'
         )
+        _bbox = [Vec3(-.5,-.5,0), Vec3(.5,-.5,0), Vec3(.5,.5,0), Vec3(-.5,.5,0), Vec3(-.5,-.5,0)]
+        Entity(parent=self, model=Mesh(vertices=_bbox, mode='line', thickness=2),
+               color=color.orange, unlit=True, z=-0.05)
+        state.drone_projectiles.append(self)
+
+    def _remove(self):
+        if self in state.drone_projectiles:
+            state.drone_projectiles.remove(self)
+        state._destroy(self)
 
     def update(self):
         if state.paused:
@@ -26,59 +35,61 @@ class DroneProjectile(Entity):
         if (self.x < state.player.x - 6 or
                 self.x > state.player.x + 50 or
                 self.y < GROUND_Y - 2):
-            state._destroy(self)
+            self._remove()
 
 
 # ── Charging drone ────────────────────────────────────────────────────────
 class ChargingDrone(Entity):
     """
-    Drifts in from the right, hovers and flashes red to telegraph,
-    then locks onto the player's Y and charges across the screen.
+    Swoops in from the top-right, locks to the right of the player,
+    tracks the player's Y while hovering, then charges at them.
     """
     def __init__(self):
-        hover_y = random.uniform(GROUND_Y + 2, GROUND_Y + 10)
         super().__init__(
             model='quad', color=color.cyan,
             scale=(1.6, 1.0),
-            position=(state._spawn_x(), hover_y, 0),
+            position=(state._spawn_x(), random.uniform(8, 14), 0),
             collider='box', name='charging_drone'
         )
-        self.drone_state    = 'approaching'
-        self.hover_y        = hover_y
+        self.drone_state    = 'swooping'
         self.hover_timer    = 0.0
-        self.hover_duration = random.uniform(1.8, 3.0)
-        self.charge_speed   = 14.0
-        self.locked_y       = None
-        self.ramp           = 0.0   # smooth charge ramp-up
+        self.hover_duration = random.uniform(1.5, 2.5)
+        self.charge_speed   = 16.0
+        self.ramp           = 0.0
+        self.locked_y       = 0.0
 
     def update(self):
         if state.paused or not state.game_running:
             return
 
-        if self.drone_state == 'approaching':
-            self.x -= state.scroll_speed * time.dt
-            diff_y  = self.hover_y - self.y
-            self.y += diff_y * 5 * time.dt
-            if abs(diff_y) < 0.2:
+        min_x = camera.x + 2   # stay on the right half of the visible screen
+
+        if self.drone_state == 'swooping':
+            # Scroll left with the world but never past min_x
+            self.x = max(min_x, self.x - state.scroll_speed * time.dt)
+            # Swoop down toward the player's current y
+            self.y += (state.player.y - self.y) * 3 * time.dt
+            if self.x <= min_x + 0.5 and abs(self.y - state.player.y) < 1.5:
                 self.drone_state = 'hovering'
 
         elif self.drone_state == 'hovering':
-            self.x           -= state.scroll_speed * time.dt
-            self.hover_timer  += time.dt
+            # Lock x to the right of the player, keep tracking y
+            self.x  = min_x
+            self.y += (state.player.y - self.y) * 5 * time.dt
+            self.hover_timer += time.dt
             self.color = color.red if (int(self.hover_timer * 6) % 2 == 0) else color.cyan
             if self.hover_timer >= self.hover_duration:
-                self.locked_y    = state.player.y
+                self.locked_y    = self.y   # freeze y at current position
                 self.drone_state = 'charging'
                 self.ramp        = 0.0
 
         elif self.drone_state == 'charging':
             self.ramp  = min(self.ramp + time.dt * 4, 1.0)
             self.x    -= self.charge_speed * self.ramp * time.dt
-            self.y    += (self.locked_y - self.y) * 0.12
+            self.y     = self.locked_y      # y is frozen during the charge
 
         if (self.x + self.scale_x / 2 < state.player.x - 8 or
-                self.x > state.player.x + 50 or
-                self.y < GROUND_Y - 1):
+                self.x > state.player.x + 60):
             if self in state.charging_drones: state.charging_drones.remove(self)
             state._destroy(self)
 
@@ -90,8 +101,8 @@ class ShootingDrone(Entity):
     then departs. Also acts as a grapple anchor.
     """
     def __init__(self):
-        target_x = camera.x + camera.fov / 2 - 3 + random.uniform(-1.5, 1.5)
-        target_y = GROUND_Y + random.uniform(8, 13) + random.uniform(-1.0, 1.0)
+        target_x = camera.x + camera.fov / 2 - 2 + random.uniform(0, 3)
+        target_y = random.uniform(5, 12)   # top-right area
         super().__init__(
             model='quad', color=color.magenta,
             scale=(1.6, 1.0),
@@ -111,8 +122,11 @@ class ShootingDrone(Entity):
         if state.paused or not state.game_running:
             return
 
-        # Keep target drifting left so the drone stays in a consistent screen position
-        self.target_pos.x -= state.scroll_speed * time.dt
+        # Drift left with the world but never past a minimum right offset from the player
+        self.target_pos.x = max(
+            self.target_pos.x - state.scroll_speed * time.dt,
+            camera.x + 2   # stay on the right half of the visible screen
+        )
 
         if self.drone_state == 'approaching':
             self.position       = lerp(self.position, self.target_pos, 3 * time.dt)
