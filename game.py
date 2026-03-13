@@ -30,7 +30,7 @@ def collect_coin(coin_ent):
     if coin_ent in state.coins_list:
         state.coins_list.remove(coin_ent)
     state._destroy(coin_ent)
-    state.audio.play('coin7')
+    state.audio.play('coin')
 
 
 def complete_level():
