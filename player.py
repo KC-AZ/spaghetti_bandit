@@ -52,6 +52,7 @@ class Player(Entity):
         self.grappling      = False
         self.grapple_anchor = None
         self.rope_length    = 0.0
+        self.rope_taut      = False
         self.swing_angle    = 0.0
         self.angular_vel    = 0.0
         self.entry_vel_x    = 0.0
@@ -154,33 +155,27 @@ class Player(Entity):
         if best is None:
             return
         self.grapple_anchor = best
-        self.rope_length    = best_d
-        self.swing_angle    = math.atan2(self.y - best.y, self.x - best.x)
-        # Player's own velocity drives the initial swing arc
-        tang_vel          = (self.vel_x * (-math.sin(self.swing_angle)) +
-                             self.vel_y *   math.cos(self.swing_angle))
-        self.angular_vel  = tang_vel / max(self.rope_length, 0.5)
-        self.entry_vel_x  = self.vel_x
-        self.min_swing_y  = self.y
-        self.vel_x        = 0.0
-        self.vel_y        = 0.0
-        self.grappling    = True
+        self.rope_length    = min(best_d, Config.GRAPPLE_SLACK_MAX)
+        self.rope_taut      = False   # rope starts slack; vel_x/vel_y untouched
+        self.grappling      = True
         state.audio.play('grapple')
 
     def release_grapple(self):
         if not self.grappling:
             return
-        tang_speed  = self.angular_vel * self.rope_length
-        swing_vel_x = tang_speed * (-math.sin(self.swing_angle))
-        swing_vel_y = tang_speed *   math.cos(self.swing_angle)
-
-        past_lowest = self.y > self.min_swing_y + 2.0
-        if not past_lowest:
-            self.vel_x = max(swing_vel_x, self.entry_vel_x)
-        else:
-            self.vel_x = swing_vel_x
-        self.vel_y          = swing_vel_y
+        if self.rope_taut:
+            tang_speed  = self.angular_vel * self.rope_length
+            swing_vel_x = tang_speed * (-math.sin(self.swing_angle))
+            swing_vel_y = tang_speed *   math.cos(self.swing_angle)
+            past_lowest = self.y > self.min_swing_y + 2.0
+            if not past_lowest:
+                self.vel_x = max(swing_vel_x, self.entry_vel_x)
+            else:
+                self.vel_x = swing_vel_x
+            self.vel_y = swing_vel_y
+        # if still slack, vel_x/vel_y are already correct from free flight
         self.grappling      = False
+        self.rope_taut      = False
         self.grapple_anchor = None
         state.clear_rope()
 
@@ -204,7 +199,7 @@ class Player(Entity):
             self.on_ground       = True
             self.jumps_remaining = 2
             self.coyote_timer    = Config.COYOTE_TIME
-            if self.grappling:
+            if self.grappling and self.rope_taut:
                 self.release_grapple()
             elif self.jump_buffer > 0:
                 self.jump_buffer = 0.0
@@ -266,9 +261,41 @@ class Player(Entity):
             self.release_grapple()
             return
 
-        if self.rope_length > Config.GRAPPLE_MIN_ROPE:
-            old_L = self.rope_length
-            self.rope_length = max(Config.GRAPPLE_MIN_ROPE,
+        if not self.rope_taut:
+            # Slack phase: free flight under gravity — velocity fully preserved
+            self.vel_y -= Config.GRAVITY * time.dt
+            if self.vel_y < 0:
+                self.vel_y -= Config.GRAVITY * (Config.FALL_MULT - 1) * time.dt
+            self.x += self.vel_x * time.dt
+            self.y += self.vel_y * time.dt
+            self.vel_x = max(0.0, self.vel_x - self.vel_x * Config.GRAPPLE_X_DRAG * time.dt)
+
+            dx = self.x - anchor.x
+            dy = self.y - anchor.y
+            dist = math.sqrt(dx * dx + dy * dy)
+            if dist >= self.rope_length:
+                # Rope snaps taut — convert velocity to angular now
+                self.rope_length = dist
+                self.swing_angle = math.atan2(dy, dx)
+                tang_vel   = (self.vel_x * (-math.sin(self.swing_angle)) +
+                              self.vel_y *   math.cos(self.swing_angle))
+                radial_vel = (self.vel_x *   math.cos(self.swing_angle) +
+                              self.vel_y *   math.sin(self.swing_angle))
+                # Redirect 40% of any outward radial speed into the swing
+                tang_vel  += max(0.0, -radial_vel) * 0.4
+                self.angular_vel = tang_vel / max(self.rope_length, 0.5)
+                self.entry_vel_x = self.vel_x
+                self.min_swing_y = self.y
+                self.vel_x       = 0.0
+                self.vel_y       = 0.0
+                self.rope_taut   = True
+            state.update_rope(self, anchor)
+            return
+
+        # Taut pendulum physics — reel in unless already close to the helicopter
+        if self.rope_length > Config.GRAPPLE_REEL_MIN_LENGTH:
+            old_L            = self.rope_length
+            self.rope_length = max(Config.GRAPPLE_REEL_MIN_LENGTH,
                                    self.rope_length - Config.GRAPPLE_REEL_SPEED * time.dt)
             self.angular_vel *= old_L / self.rope_length
 

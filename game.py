@@ -113,6 +113,7 @@ def load_level(level_id):
     p.alive      = True
     p.grappling        = False
     p.grapple_anchor   = None
+    p.rope_taut        = False
     p.jumps_remaining  = 2
     p.jump_buffer      = 0.0
     p.coyote_timer     = 0.0

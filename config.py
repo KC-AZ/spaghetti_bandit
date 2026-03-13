@@ -24,9 +24,11 @@ class Config:
     GROUND_FRICTION = 2.5   # ground drag — speed bleeds if you don't bhop
 
     # Grapple
-    GRAPPLE_MIN_ROPE   = 6.0
-    GRAPPLE_REEL_SPEED = 12.0
-    GRAPPLE_SWING_MULT = 2.5
+    GRAPPLE_MIN_ROPE         = 6.0
+    GRAPPLE_REEL_SPEED       = 17.5   # how fast the rope pulls in
+    GRAPPLE_SWING_MULT       = 2.5
+    GRAPPLE_REEL_MIN_LENGTH  = 8.0   # below this rope length, no reel-in
+    GRAPPLE_SLACK_MAX        = 16.0  # max rope length for slack phase; beyond this snaps taut immediately
 
     # Collectibles
     COIN_VALUE = 50
