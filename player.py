@@ -156,8 +156,32 @@ class Player(Entity):
             return
         self.grapple_anchor = best
         self.rope_length    = min(best_d, Config.GRAPPLE_SLACK_MAX)
-        self.rope_taut      = False   # rope starts slack; vel_x/vel_y untouched
         self.grappling      = True
+
+        if self.on_ground:
+            # Skip slack phase when standing — go taut immediately so the pendulum
+            # repositions the player above the floor before the ground clamp fires
+            dx = self.x - best.x
+            dy = self.y - best.y
+            self.rope_length = best_d
+            self.swing_angle = math.atan2(dy, dx)
+            tang_vel   = (self.vel_x * (-math.sin(self.swing_angle)) +
+                          self.vel_y *   math.cos(self.swing_angle))
+            radial_vel = (self.vel_x *   math.cos(self.swing_angle) +
+                          self.vel_y *   math.sin(self.swing_angle))
+            tang_vel  += max(0.0, -radial_vel) * 0.4
+            self.angular_vel = tang_vel / max(best_d, 0.5)
+            self.entry_vel_x = self.vel_x
+            self.min_swing_y = self.y
+            self.vel_x       = 0.0
+            self.vel_y       = 0.0
+            self.rope_taut   = True
+            # Nudge above floor so the ground clamp doesn't release us this frame
+            floor = GROUND_Y + 0.5 + self.scale_y / 2
+            self.y = max(self.y, floor + 0.15)
+        else:
+            self.rope_taut = False   # rope starts slack; vel_x/vel_y untouched
+
         state.audio.play('grapple')
 
     def release_grapple(self):
