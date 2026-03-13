@@ -1,13 +1,14 @@
 """
 Enemies: ChargingDrone, ShootingDrone, DroneProjectile.
+Enemies are placed at world positions and activate when the player approaches.
 """
 from ursina import *
-import random
+import random, math
 import state
 from config import GROUND_Y
 
 
-# ── Drone projectile ──────────────────────────────────────────────────────
+# ── Drone projectile ───────────────────────────────────────────────────────
 class DroneProjectile(Entity):
     def __init__(self, start_pos, direction):
         self.dir   = direction.normalized()
@@ -29,32 +30,40 @@ class DroneProjectile(Entity):
         state._destroy(self)
 
     def update(self):
-        if state.paused:
+        if state.paused or not state.game_running:
             return
         self.position += self.dir * self.speed * time.dt
-        if (self.x < state.player.x - 6 or
-                self.x > state.player.x + 50 or
+        # Despawn when well off-screen relative to the player
+        if (self.x < state.player.x - 8 or
+                self.x > state.player.x + 60 or
                 self.y < GROUND_Y - 2):
             self._remove()
 
 
-# ── Charging drone ────────────────────────────────────────────────────────
+# ── Charging drone ─────────────────────────────────────────────────────────
 class ChargingDrone(Entity):
     """
-    Swoops in from the top-right, locks to the right of the player,
-    tracks the player's Y while hovering, then charges at them.
+    Waits at its world position until the player is close, then repositions
+    just off-screen right and swoops in at a fixed speed.
     """
-    def __init__(self):
+    HOVER_CAM_OFFSET = 18   # units right of camera centre while hovering (near far-right edge)
+    SWOOP_SPEED      = 35   # units/s — outruns any player bhop speed
+    ACTIVATION_DIST  = 30
+
+    def __init__(self, x, y):
         super().__init__(
             model='quad', color=color.cyan,
             scale=(1.6, 1.0),
-            position=(state._spawn_x(), random.uniform(8, 14), 0),
+            position=(x, y, 0),
             collider='box', name='charging_drone'
         )
-        self.drone_state    = 'swooping'
+        self.trigger_x      = x
+        self.spawn_y        = y
+        self.drone_state    = 'waiting'
         self.hover_timer    = 0.0
+        self.swoop_timer    = 0.0
         self.hover_duration = random.uniform(1.5, 2.5)
-        self.charge_speed   = 16.0
+        self.charge_speed   = 22.0
         self.ramp           = 0.0
         self.locked_y       = 0.0
 
@@ -62,93 +71,94 @@ class ChargingDrone(Entity):
         if state.paused or not state.game_running:
             return
 
-        min_x = camera.x + 2   # stay on the right half of the visible screen
+        if self.drone_state == 'waiting':
+            if state.player.x > self.trigger_x - self.ACTIVATION_DIST:
+                # Start well off the right edge so the swoop-in is fully visible
+                self.x = camera.x + 42
+                self.y = self.spawn_y
+                self.drone_state = 'swooping'
+            return
+
+        hover_x = camera.x + self.HOVER_CAM_OFFSET   # far-right anchor, updates every frame
 
         if self.drone_state == 'swooping':
-            # Scroll left with the world but never past min_x
-            self.x = max(min_x, self.x - state.scroll_speed * time.dt)
-            # Swoop down toward the player's current y
-            self.y += (state.player.y - self.y) * 3 * time.dt
-            if self.x <= min_x + 0.5 and abs(self.y - state.player.y) < 1.5:
+            target_x = hover_x
+            target_y = state.player.y
+            dx = target_x - self.x
+            dy = target_y - self.y
+            d  = max(0.1, math.sqrt(dx * dx + dy * dy))
+            self.x += (dx / d) * self.SWOOP_SPEED * time.dt
+            self.y += (dy / d) * self.SWOOP_SPEED * time.dt
+            self.swoop_timer += time.dt
+            if abs(self.x - target_x) < 2.0 or self.swoop_timer > 4.0:
                 self.drone_state = 'hovering'
+                self.hover_timer = 0.0
 
         elif self.drone_state == 'hovering':
-            # Lock x to the right of the player, keep tracking y
-            self.x  = min_x
-            self.y += (state.player.y - self.y) * 5 * time.dt
+            # Lock to far-right edge of screen; smooth y to match player height
+            self.x  = hover_x
+            self.y += (state.player.y - self.y) * 6 * time.dt
             self.hover_timer += time.dt
             self.color = color.red if (int(self.hover_timer * 6) % 2 == 0) else color.cyan
             if self.hover_timer >= self.hover_duration:
-                self.locked_y    = self.y   # freeze y at current position
+                self.locked_y    = self.y
                 self.drone_state = 'charging'
                 self.ramp        = 0.0
 
         elif self.drone_state == 'charging':
             self.ramp  = min(self.ramp + time.dt * 4, 1.0)
             self.x    -= self.charge_speed * self.ramp * time.dt
-            self.y     = self.locked_y      # y is frozen during the charge
+            self.y     = self.locked_y
 
-        if (self.x + self.scale_x / 2 < state.player.x - 8 or
-                self.x > state.player.x + 60):
-            if self in state.charging_drones: state.charging_drones.remove(self)
+        # Despawn when well behind the player
+        if self.x + self.scale_x / 2 < state.player.x - 15:
+            if self in state.charging_drones:
+                state.charging_drones.remove(self)
             state._destroy(self)
 
 
-# ── Shooting drone ────────────────────────────────────────────────────────
+# ── Ground shooter ─────────────────────────────────────────────────────────
 class ShootingDrone(Entity):
     """
-    Drops in from the top-right, hovers and fires aimed projectiles,
-    then departs. Also acts as a grapple anchor.
+    Static ground enemy. Stands on the floor and fires at the player
+    when they get within range. Kept as ShootingDrone for level-data compat.
     """
-    def __init__(self):
-        target_x = camera.x + camera.fov / 2 - 2 + random.uniform(0, 3)
-        target_y = random.uniform(5, 12)   # top-right area
+    SCALE_W         = 0.9
+    SCALE_H         = 1.6
+    ACTIVATION_DIST = 35
+
+    def __init__(self, x, y):   # y from level data is ignored — always on ground
+        ground_y = GROUND_Y + 0.5 + self.SCALE_H / 2
         super().__init__(
-            model='quad', color=color.magenta,
-            scale=(1.6, 1.0),
-            position=(target_x, target_y + 8, 0),   # spawn above target
+            model='quad', color=color.rgb(200, 55, 55),
+            scale=(self.SCALE_W, self.SCALE_H),
+            position=(x, ground_y, 0),
             collider='box', name='shooting_drone'
         )
-        self.target_pos     = Vec3(target_x, target_y, 0)
-        self.drone_state    = 'approaching'
-        self.approach_timer = 0.0
-        self.hover_timer    = 0.0
-        self.hover_duration = random.uniform(4.0, 6.5)
+        self.trigger_x      = x
+        self.active         = False
         self.shoot_timer    = 0.0
-        self.shoot_interval = random.uniform(1.0, 2.0)
-        self.depart_speed   = 6.0
+        self.shoot_interval = random.uniform(1.5, 2.5)
 
     def update(self):
         if state.paused or not state.game_running:
             return
 
-        # Drift left with the world but never past a minimum right offset from the player
-        self.target_pos.x = max(
-            self.target_pos.x - state.scroll_speed * time.dt,
-            camera.x + 2   # stay on the right half of the visible screen
-        )
+        if not self.active:
+            if state.player.x > self.trigger_x - self.ACTIVATION_DIST:
+                self.active = True
+            return
 
-        if self.drone_state == 'approaching':
-            self.position       = lerp(self.position, self.target_pos, 3 * time.dt)
-            self.approach_timer += time.dt
-            if self.approach_timer >= 1.2:
-                self.drone_state = 'hovering'
+        self.shoot_timer += time.dt
+        if self.shoot_timer >= self.shoot_interval:
+            self.shoot_timer = 0.0
+            # Fire from upper body toward player
+            origin = Vec3(self.x, self.y + self.scale_y * 0.25, 0)
+            DroneProjectile(start_pos=origin,
+                            direction=state.player.position - origin)
 
-        elif self.drone_state == 'hovering':
-            self.position    = lerp(self.position, self.target_pos, 6 * time.dt)
-            self.hover_timer += time.dt
-            self.shoot_timer += time.dt
-            if self.shoot_timer >= self.shoot_interval:
-                self.shoot_timer = 0.0
-                DroneProjectile(start_pos=Vec3(self.x, self.y, 0),
-                                direction=state.player.position - self.position)
-            if self.hover_timer >= self.hover_duration:
-                self.drone_state = 'departing'
-
-        elif self.drone_state == 'departing':
-            self.x += self.depart_speed * time.dt
-            self.y += self.depart_speed * 0.5 * time.dt
-            if (self.x > state.player.x + 50 or
-                    self.y > 20):
-                if self in state.shooting_drones: state.shooting_drones.remove(self)
-                state._destroy(self)
+        # Despawn once well behind the player
+        if self.x < state.player.x - 20:
+            if self in state.shooting_drones:
+                state.shooting_drones.remove(self)
+            state._destroy(self)
