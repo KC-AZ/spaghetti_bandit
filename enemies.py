@@ -130,7 +130,7 @@ class ShootingDrone(Entity):
     def __init__(self, x, y):   # y from level data is ignored — always on ground
         ground_y = GROUND_Y + 0.5 + self.SCALE_H / 2
         super().__init__(
-            model='quad', color=color.rgb(200, 55, 55),
+            model='quad', color=color.rgb32(200, 55, 55),
             scale=(self.SCALE_W, self.SCALE_H),
             position=(x, ground_y, 0),
             collider='box', name='shooting_drone'

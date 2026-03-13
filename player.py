@@ -101,7 +101,7 @@ class Player(Entity):
                         proj.dir = -proj.dir
                         proj.color = color.red
         elif self.parry_cooldown > 0:
-            self.color = color.rgb(160, 160, 160)   # grey = on cooldown
+            self.color = color.rgb32(160, 160, 160)   # grey = on cooldown
         else:
             self.color = color.white                 # white = ready
 

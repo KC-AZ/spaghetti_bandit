@@ -77,7 +77,7 @@ def load_level(level_id):
     state.num_coins      = 0
 
     # Sky colour
-    window.color = color.rgb(*level['sky_color'])
+    window.color = color.rgb32(*level['sky_color'])
 
     # Cars disabled for now
     # for c in level.get('cars', []):
@@ -225,7 +225,7 @@ def main():
     window.title      = 'Spaghetti Bandit'
     window.borderless = False
     window.size       = Vec2(1280, 720)
-    window.color      = color.rgb(135, 206, 235)
+    window.color      = color.rgb32(135, 206, 235)
 
     camera.orthographic = True
     camera.fov          = 30
