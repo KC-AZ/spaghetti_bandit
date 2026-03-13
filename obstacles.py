@@ -5,7 +5,7 @@ All are now placed at explicit world positions (no auto-scrolling).
 from ursina import *
 import random, math
 import state
-from config import GROUND_Y
+from config import GROUND_Y, GRAPPLE_RANGE
 
 
 # ── Car ────────────────────────────────────────────────────────────────────
@@ -51,21 +51,52 @@ class Coin(Entity):
 
 
 # ── Helicopter ─────────────────────────────────────────────────────────────
+def _make_ring_mesh(segments=48):
+    verts = [Vec3(math.cos(math.tau * i / segments) * 0.5,
+                  math.sin(math.tau * i / segments) * 0.5, 0)
+             for i in range(segments + 1)]
+    return Mesh(vertices=verts, mode='line', thickness=2)
+
+
 class Helicopter(Entity):
+    _SW = 3.0   # entity scale_x
+    _SH = 1.2   # entity scale_y
+
     def __init__(self, x, y):
-        self.base_y = y
-        self.bob_t  = 0.0
+        self.base_y  = y
+        self.bob_t   = 0.0
+        self.pulse_t = 0.0
         super().__init__(
             model='quad', color=color.rgb(30, 110, 30),
-            scale=(3.0, 1.2),
+            scale=(self._SW, self._SH),
             position=(x, y, 0),
             name='helicopter'
         )
+        # Rotor blade
         Entity(parent=self, model='quad', color=color.rgb(60, 60, 60),
                scale=(1.3, 0.07), position=(0, 0.55, -0.01))
+
+        # Range ring — pulses green when player is within grapple range.
+        _R = 3.0
+        self._ring = Entity(
+            parent=self, unlit=True,
+            model=_make_ring_mesh(),
+            scale=(2 * _R / self._SW, 2 * _R / self._SH),
+            color=color.rgba(80, 255, 80, 0),
+            z=-0.03
+        )
 
     def update(self):
         if state.paused or not state.game_running:
             return
         self.bob_t += time.dt * 3
         self.y      = self.base_y + math.sin(self.bob_t) * 0.15
+
+        p = state.player
+        if p and p.alive and distance(self.position, p.position) <= GRAPPLE_RANGE:
+            self.pulse_t += time.dt * 6
+            alpha = int(140 + 80 * math.sin(self.pulse_t))
+            self._ring.color = color.rgba(80, 255, 80, alpha)
+        else:
+            self.pulse_t = 0.0
+            self._ring.color = color.rgba(80, 255, 80, 0)
