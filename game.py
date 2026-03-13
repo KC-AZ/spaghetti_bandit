@@ -144,6 +144,8 @@ def start_game(level_id=1):
 
 
 def restart_level():
+    state._destroy(state.level_complete_panel)
+    state.level_complete_panel = None
     load_level(state.current_level)
 
 
@@ -169,7 +171,7 @@ def input(key):
         state.player.do_parry()
 
     # Quick restart
-    if key == 'r' and state.game_running and not state.paused:
+    if key == 'r' and not state.paused and (state.game_running or state.level_complete):
         restart_level()
 
 
