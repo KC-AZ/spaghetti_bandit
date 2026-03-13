@@ -1,9 +1,10 @@
 """
 Obstacles and grapple anchors: Car, Coin, Helicopter.
-All are now placed at explicit world positions (no auto-scrolling).
+All are placed at explicit world positions (no auto-scrolling).
 """
+import math
+import random
 from ursina import *
-import random, math
 import state
 from config import GROUND_Y, GRAPPLE_RANGE
 
@@ -15,6 +16,7 @@ CAR_DEFS = [
     (3.8, 1.5,  color.rgb32(210, 150,  70)),  # large
     (5.2, 2.3,  color.rgb32(210,  70,  70)),  # truck
 ]
+
 
 class Car(Entity):
     def __init__(self, x):
@@ -55,6 +57,7 @@ _HELI_INNER_R   = 0.2    # world-space radius of the inner static dot
 _HELI_OUTER_MAX = 3.5    # world-space radius of the outer ring when player is far
 _HELI_DETECT    = 50.0   # distance at which outer ring is at its maximum size
 
+
 def _disc_mesh(segments=24):
     verts = [Vec3(0, 0, 0)]
     for i in range(segments):
@@ -64,6 +67,7 @@ def _disc_mesh(segments=24):
     for i in range(segments):
         tris += [0, i + 1, (i + 1) % segments + 1]
     return Mesh(vertices=verts, triangles=tris)
+
 
 def _ring_mesh(segments=36):
     verts = [Vec3(math.cos(math.tau * i / segments) * 0.5,

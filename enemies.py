@@ -2,8 +2,9 @@
 Enemies: ChargingDrone, ShootingDrone, DroneProjectile.
 Enemies are placed at world positions and activate when the player approaches.
 """
+import math
+import random
 from ursina import *
-import random, math
 import state
 from config import GROUND_Y
 
@@ -19,7 +20,7 @@ class DroneProjectile(Entity):
             position=start_pos,
             collider='box', name='drone_projectile'
         )
-        _bbox = [Vec3(-.5,-.5,0), Vec3(.5,-.5,0), Vec3(.5,.5,0), Vec3(-.5,.5,0), Vec3(-.5,-.5,0)]
+        _bbox = [Vec3(-.5, -.5, 0), Vec3(.5, -.5, 0), Vec3(.5, .5, 0), Vec3(-.5, .5, 0), Vec3(-.5, -.5, 0)]
         Entity(parent=self, model=Mesh(vertices=_bbox, mode='line', thickness=2),
                color=color.orange, unlit=True, z=-0.05)
         state.drone_projectiles.append(self)

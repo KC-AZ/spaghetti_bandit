@@ -1,8 +1,11 @@
+"""
+Audio manager stub.
+Drop files into assets/audio/ and uncomment the relevant TODO lines.
+Supported sfx keys: 'jump', 'coin', 'death', 'grapple'
+"""
+
+
 class AudioManager:
-    """
-    Drop files into assets/audio/ and uncomment the relevant TODO lines.
-    Supported sfx keys: 'jump', 'coin', 'death', 'grapple'
-    """
     def __init__(self):
         self.music_vol = 0.7
         self.sfx_vol   = 1.0

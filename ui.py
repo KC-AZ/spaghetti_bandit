@@ -33,6 +33,7 @@ def create_hud():
     state.hud_parry_text = Text('PARRY: READY', origin=(-0.5, -0.5),
                                 position=(-0.85, -0.44), scale=0.9, color=color.lime)
 
+
 def update_hud():
     if state.hud_timer_text:
         state.hud_timer_text.text = _fmt(state.level_timer)
@@ -48,14 +49,12 @@ def update_hud():
             state.hud_parry_text.text  = 'PARRY: READY'
             state.hud_parry_text.color = color.lime
 
+
 def destroy_hud():
     for attr in ('hud_bg', 'hud_timer_text', 'hud_level_text',
                  'hud_coins_text', 'hud_goal_text', 'hud_parry_text'):
         _destroy(getattr(state, attr, None))
-        try:
-            setattr(state, attr, None)
-        except Exception:
-            pass
+        setattr(state, attr, None)
 
 
 # ── Main menu ──────────────────────────────────────────────────────────────
@@ -71,14 +70,16 @@ def show_main_menu():
          parent=state.menu_panel, y=0.14, scale=0.85, color=color.gray, origin=(0, 0))
 
     def _levels():
-        _destroy(state.menu_panel); state.menu_panel = None
+        _destroy(state.menu_panel)
+        state.menu_panel = None
         show_level_select()
 
     def _settings():
-        _destroy(state.menu_panel); state.menu_panel = None
+        _destroy(state.menu_panel)
+        state.menu_panel = None
         show_settings(back_fn=show_main_menu)
 
-    Button('Play',     parent=state.menu_panel, scale=(0.25, 0.1), y=0.00, on_click=_levels)
+    Button('Play',     parent=state.menu_panel, scale=(0.25, 0.1), y=0.00,  on_click=_levels)
     Button('Settings', parent=state.menu_panel, scale=(0.25, 0.1), y=-0.14, on_click=_settings)
     Button('Quit',     parent=state.menu_panel, scale=(0.25, 0.1), y=-0.28, on_click=application.quit)
 
@@ -93,9 +94,9 @@ def show_level_select():
          y=0.36, scale=2.5, color=color.orange, origin=(0, 0))
 
     for idx, lvl in enumerate(LEVELS):
-        lid  = lvl['id']
-        pb   = state.pbs.get(lid)
-        goal = lvl.get('baseline_time')
+        lid   = lvl['id']
+        pb    = state.pbs.get(lid)
+        goal  = lvl.get('baseline_time')
         row_y = 0.18 - idx * 0.13
 
         def _make_play(level_id):
@@ -106,7 +107,7 @@ def show_level_select():
                 start_game(level_id)
             return _play
 
-        # Level name as a clickable button (centred, y-only positioning)
+        # Level name as a clickable button
         Button(f'{lid}.  {lvl["name"]}', parent=state.level_select_panel,
                scale=(0.50, 0.08), y=row_y + 0.03, on_click=_make_play(lid))
         # Goal / PB info line directly below the button
@@ -150,7 +151,8 @@ def show_settings(back_fn=None):
            position=(-0.22, -0.41), scale=0.55)
 
     def _back():
-        _destroy(state.settings_panel); state.settings_panel = None
+        _destroy(state.settings_panel)
+        state.settings_panel = None
         if back_fn:
             back_fn()
 
@@ -167,20 +169,23 @@ def show_pause():
 
     def _resume():
         state.paused = False
-        _destroy(state.pause_panel); state.pause_panel = None
+        _destroy(state.pause_panel)
+        state.pause_panel = None
 
     def _restart():
         from game import restart_level
         state.paused = False
-        _destroy(state.pause_panel); state.pause_panel = None
+        _destroy(state.pause_panel)
+        state.pause_panel = None
         restart_level()
 
     def _to_menu():
         state.paused = False
-        _destroy(state.pause_panel); state.pause_panel = None
+        _destroy(state.pause_panel)
+        state.pause_panel = None
         show_main_menu()
 
-    Button('Resume',    parent=state.pause_panel, scale=(0.33, 0.1), y=0.10, on_click=_resume)
+    Button('Resume',    parent=state.pause_panel, scale=(0.33, 0.1), y=0.10,  on_click=_resume)
     Button('Restart',   parent=state.pause_panel, scale=(0.33, 0.1), y=-0.04, on_click=_restart)
     Button('Settings',  parent=state.pause_panel, scale=(0.33, 0.1), y=-0.18,
            on_click=lambda: show_settings(back_fn=show_pause))
@@ -211,11 +216,13 @@ def show_death_screen():
 
     def _restart():
         from game import restart_level
-        _destroy(state.death_panel); state.death_panel = None
+        _destroy(state.death_panel)
+        state.death_panel = None
         restart_level()
 
     def _menu():
-        _destroy(state.death_panel); state.death_panel = None
+        _destroy(state.death_panel)
+        state.death_panel = None
         show_main_menu()
 
     Button('Restart',   parent=state.death_panel, scale=(0.3, 0.1), y=-0.28, on_click=_restart)
@@ -262,16 +269,19 @@ def show_level_complete(run_time, pb_time, is_new_pb, level_id):
 
     def _next():
         from game import start_game
-        _destroy(state.level_complete_panel); state.level_complete_panel = None
+        _destroy(state.level_complete_panel)
+        state.level_complete_panel = None
         start_game(level_id + 1)
 
     def _retry():
         from game import restart_level
-        _destroy(state.level_complete_panel); state.level_complete_panel = None
+        _destroy(state.level_complete_panel)
+        state.level_complete_panel = None
         restart_level()
 
     def _menu():
-        _destroy(state.level_complete_panel); state.level_complete_panel = None
+        _destroy(state.level_complete_panel)
+        state.level_complete_panel = None
         show_main_menu()
 
     btn_y = -0.33

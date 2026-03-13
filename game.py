@@ -40,10 +40,10 @@ def complete_level():
     state.game_running   = False
     state.clear_rope()
 
-    lvl_id  = state.current_level
-    t       = state.level_timer
-    old_pb  = state.pbs.get(lvl_id)
-    is_pb   = old_pb is None or t < old_pb
+    lvl_id = state.current_level
+    t      = state.level_timer
+    old_pb = state.pbs.get(lvl_id)
+    is_pb  = old_pb is None or t < old_pb
     if is_pb:
         state.pbs[lvl_id] = t
         state.save_pbs()
@@ -76,12 +76,8 @@ def load_level(level_id):
     state.level_complete = False
     state.num_coins      = 0
 
-    # Sky colour
     window.color = color.rgb32(*level['sky_color'])
 
-    # Cars disabled for now
-    # for c in level.get('cars', []):
-    #     state.cars.append(Car(c['x']))
     for h in level.get('helicopters', []):
         state.helicopters.append(Helicopter(h['x'], h['y']))
     for d in level.get('charging_drones', []):
@@ -101,26 +97,26 @@ def load_level(level_id):
     )
 
     # Reset player
-    p            = state.player
-    floor_y      = GROUND_Y + 0.5 + p.scale_y / 2
-    p.position   = Vec3(0, floor_y, 0)
-    p.vel_x      = 0.0
-    p.vel_y      = 0.0
-    p.on_ground  = True
-    p.ducking    = False
-    p.scale_y    = 3.0
-    p.face_dir   = 1
-    p.alive      = True
-    p.grappling        = False
-    p.grapple_anchor   = None
-    p.rope_taut        = False
-    p.jumps_remaining  = 2
-    p.jump_buffer      = 0.0
-    p.coyote_timer     = 0.0
-    p.parry_active     = False
-    p.parry_timer      = 0.0
-    p.parry_cooldown   = 0.0
-    p.color            = color.white
+    p           = state.player
+    floor_y     = GROUND_Y + 0.5 + p.scale_y / 2
+    p.position  = Vec3(0, floor_y, 0)
+    p.vel_x     = 0.0
+    p.vel_y     = 0.0
+    p.on_ground = True
+    p.ducking   = False
+    p.scale_y   = 3.0
+    p.face_dir  = 1
+    p.alive     = True
+    p.grappling       = False
+    p.grapple_anchor  = None
+    p.rope_taut       = False
+    p.jumps_remaining = 2
+    p.jump_buffer     = 0.0
+    p.coyote_timer    = 0.0
+    p.parry_active    = False
+    p.parry_timer     = 0.0
+    p.parry_cooldown  = 0.0
+    p.color           = color.white
     p.enable()
 
     # Camera
@@ -176,7 +172,7 @@ def input(key):
         restart_level()
 
 
-# ── Game manager (camera, timer, parallax) ────────────────────────────────
+# ── Game manager (camera, timer, parallax) ─────────────────────────────────
 class GameManager(Entity):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

@@ -1,8 +1,11 @@
 """
 Shared mutable state and utility functions.
 """
+import math
+import json
+import os
+import sys as _sys
 from ursina import *
-import math, json, os
 from config import Config
 
 # ── Entity references ──────────────────────────────────────────────────────
@@ -13,7 +16,7 @@ background_layers = []
 game_manager      = None
 finish_line       = None
 
-# ── Entity lists ──────────────────────────────────────────────────────────
+# ── Entity lists ───────────────────────────────────────────────────────────
 cars              = []
 coins_list        = []
 helicopters       = []
@@ -22,22 +25,23 @@ shooting_drones   = []
 drone_projectiles = []
 
 # ── Game / level state ─────────────────────────────────────────────────────
-current_level    = 1
-level_timer      = 0.0
-level_complete   = False
-num_coins        = 0
-paused           = False
-game_running     = False
+current_level  = 1
+level_timer    = 0.0
+level_complete = False
+num_coins      = 0
+paused         = False
+game_running   = False
 
 # ── Personal bests ─────────────────────────────────────────────────────────
-pbs     = {}      # { level_id (int): best_time (float) }
-# When frozen as .exe, saves live next to the executable (writable).
-# When running from source, saves live next to this file.
-import sys as _sys
+# { level_id (int): best_time (float) }
+pbs = {}
+
+# Save location: next to the executable when frozen, next to this file otherwise.
 _BASE = (os.path.dirname(_sys.executable)
          if getattr(_sys, 'frozen', False)
          else os.path.dirname(os.path.abspath(__file__)))
 PB_FILE = os.path.join(_BASE, 'saves', 'pbs.json')
+
 
 def load_pbs():
     global pbs
@@ -49,25 +53,27 @@ def load_pbs():
         except Exception:
             pbs = {}
 
+
 def save_pbs():
     os.makedirs(os.path.dirname(PB_FILE), exist_ok=True)
     with open(PB_FILE, 'w') as f:
         json.dump(pbs, f)
 
+
 # ── UI references ──────────────────────────────────────────────────────────
-hud_bg            = None
-hud_timer_text    = None
-hud_level_text    = None
-hud_coins_text    = None
-hud_goal_text     = None
-hud_parry_text    = None
-pause_panel       = None
-death_panel       = None
-menu_panel        = None
-settings_panel    = None
-level_select_panel = None
+hud_bg               = None
+hud_timer_text       = None
+hud_level_text       = None
+hud_coins_text       = None
+hud_goal_text        = None
+hud_parry_text       = None
+pause_panel          = None
+death_panel          = None
+menu_panel           = None
+settings_panel       = None
+level_select_panel   = None
 level_complete_panel = None
-rope_entity       = None
+rope_entity          = None
 
 
 # ── Utility ────────────────────────────────────────────────────────────────
@@ -104,6 +110,7 @@ def update_rope(p1, p2):
         double_sided=True,
         unlit=True,
     )
+
 
 def clear_rope():
     global rope_entity

@@ -2,8 +2,8 @@
 Player entity: movement, jump, grapple swing, animation, collision.
 Controls: A/D = walk, S = duck, Space = jump, Shift = grapple, F = parry
 """
-from ursina import *
 import math
+from ursina import *
 import state
 from config import Config, GROUND_Y, GRAPPLE_RANGE
 
@@ -19,7 +19,7 @@ class Player(Entity):
             name='player',
             z=0
         )
-        _bbox = [Vec3(-.2,-.5,0), Vec3(.2,-.5,0), Vec3(.2,.5,0), Vec3(-.2,.5,0), Vec3(-.2,-.5,0)]
+        _bbox = [Vec3(-.2, -.5, 0), Vec3(.2, -.5, 0), Vec3(.2, .5, 0), Vec3(-.2, .5, 0), Vec3(-.2, -.5, 0)]
         Entity(parent=self, model=Mesh(vertices=_bbox, mode='line', thickness=2),
                color=color.lime, unlit=True, z=-0.05)
 
@@ -104,7 +104,7 @@ class Player(Entity):
         elif self.parry_cooldown > 0:
             self.color = color.rgb32(160, 160, 160)   # grey = on cooldown
         else:
-            self.color = color.white                 # white = ready
+            self.color = color.white                   # white = ready
 
     # ── Jump ───────────────────────────────────────────────────────────────
     def _execute_jump(self, bhop=False):
@@ -333,7 +333,7 @@ class Player(Entity):
         state.update_rope(self, anchor)
 
     def _check_hits(self):
-        from game import trigger_death, collect_coin
+        from game import trigger_death, collect_coin   # deferred to break circular import
 
         hit = self.intersects()
         if not hit.hit:
