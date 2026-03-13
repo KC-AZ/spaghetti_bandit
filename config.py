@@ -21,7 +21,7 @@ class Config:
 
     # Horizontal drag
     GRAPPLE_X_DRAG  = 0.08  # air drag — momentum persists while airborne
-    GROUND_FRICTION = 5.0   # ground drag — speed bleeds if you don't bhop
+    GROUND_FRICTION = 2.5   # ground drag — speed bleeds if you don't bhop
 
     # Grapple
     GRAPPLE_MIN_ROPE   = 6.0
