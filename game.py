@@ -69,6 +69,8 @@ def _clear_level_entities():
 def load_level(level_id):
     _clear_level_entities()
     ui.destroy_hud()
+    for panel_attr in ('level_complete_panel', 'death_panel', 'pause_panel'):
+        ui._close(panel_attr)
 
     level = LEVELS[level_id - 1]
     state.current_level  = level_id
@@ -167,8 +169,10 @@ def input(key):
     if key == 'f' and state.game_running and not state.paused:
         state.player.do_parry()
 
-    # Quick restart
+    # Quick restart — close any active overlay first, same as the Retry button does
     if key == 'r' and not state.paused and (state.game_running or state.level_complete):
+        ui._close('level_complete_panel')
+        ui._close('death_panel')
         restart_level()
 
 
