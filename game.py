@@ -229,25 +229,28 @@ def main():
     window.color      = color.rgb32(135, 206, 235)
 
     camera.orthographic = True
-    camera.fov          = 30
+    camera.fov          = 40
 
     state.audio = AudioManager()
     state.load_pbs()
 
     state.ground = Entity(
         model='quad', color=color.green,
-        scale=(2000, 1),
-        position=(0, GROUND_Y, 0),
+        scale=(2000, 6),
+        position=(0, GROUND_Y - 2.5, 0),  # extend well below screen bottom
         collider='box', name='ground'
     )
 
+    # bg_defs: (width, height, z_depth, y_offset_above_ground)
+    # With fov=40 the visible range is ~±20 units tall.
+    # Layer 0 must be tall enough to fill from floor to top of screen.
     bg_defs = [
-        (400, 32, 5,  16),
-        (360, 29, 4,  14),
-        (320, 26, 3,  13),
-        (280, 23, 2,  11),
-        (240, 20, 1,   9),
-        (200, 17, 0.5, 8),
+        (400, 46, 5,  21),
+        (360, 38, 4,  17),
+        (320, 32, 3,  15),
+        (280, 28, 2,  13),
+        (240, 24, 1,  10),
+        (200, 20, 0.5, 8),
     ]
     state.background_layers = []
     for idx, (w, h, z, y_off) in enumerate(bg_defs):

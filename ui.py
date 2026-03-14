@@ -127,13 +127,20 @@ def show_level_select():
 
     _panel(elems)
     elems.append(Text('SELECT LEVEL', parent=camera.ui,
-                       y=0.36, scale=2.5, color=color.orange, origin=(0, 0)))
+                       y=0.40, scale=2.5, color=color.orange, origin=(0, 0)))
+
+    cols    = 3
+    col_xs  = [-0.38, 0.00, 0.38]
+    row_ys  = [0.16, -0.14]   # y centre for each row of cards
 
     for idx, lvl in enumerate(LEVELS):
-        lid   = lvl['id']
-        pb    = state.pbs.get(lid)
-        goal  = lvl.get('baseline_time')
-        row_y = 0.18 - idx * 0.13
+        lid  = lvl['id']
+        pb   = state.pbs.get(lid)
+        goal = lvl.get('baseline_time')
+        col  = idx % cols
+        row  = idx // cols
+        cx   = col_xs[col]
+        cy   = row_ys[row] if row < len(row_ys) else row_ys[-1] - (row - len(row_ys) + 1) * 0.30
 
         def _make_play(level_id):
             def _play():
@@ -142,19 +149,22 @@ def show_level_select():
                 start_game(level_id)
             return _play
 
-        elems.append(Button(f'{lid}.  {lvl["name"]}', parent=camera.ui,
-                            scale=(0.50, 0.08), y=row_y + 0.03,
-                            on_click=_make_play(lid)))
-        elems.append(Text(f'GOAL {_fmt(goal)}     PB {_fmt(pb)}',
-                           parent=camera.ui, y=row_y - 0.04,
-                           scale=0.75, color=color.white, origin=(0, 0)))
+        elems.append(Button(f'{lid}. {lvl["name"]}', parent=camera.ui,
+                             scale=(0.28, 0.09), position=(cx, cy + 0.02),
+                             on_click=_make_play(lid)))
+        elems.append(Text(f'GOAL {_fmt(goal)}', parent=camera.ui,
+                           position=(cx, cy - 0.07), scale=0.70,
+                           color=color.yellow, origin=(0, 0)))
+        elems.append(Text(f'PB  {_fmt(pb)}', parent=camera.ui,
+                           position=(cx, cy - 0.13), scale=0.70,
+                           color=color.cyan, origin=(0, 0)))
 
     def _back():
         _close('level_select_panel')
         show_main_menu()
 
     elems.append(Button('Back', parent=camera.ui,
-                         scale=(0.25, 0.09), y=-0.44, on_click=_back))
+                         scale=(0.25, 0.09), y=-0.42, on_click=_back))
 
 
 # ── Settings ───────────────────────────────────────────────────────────────

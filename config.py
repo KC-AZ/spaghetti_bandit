@@ -1,5 +1,5 @@
 CAMERA_OFFSET = 20
-GROUND_Y      = -14.0
+GROUND_Y      = -18.0
 GRAPPLE_RANGE = 30
 
 

@@ -231,4 +231,47 @@ LEVELS = [
             {'x': 388, 'y': -11},
         ],
     },
+
+    # ── Level 6 – Grapple Test Area ───────────────────────────────────────
+    # Pure grapple practice — no enemies, no cars.
+    # Section 1 (x 20–242):  uniform y=8,  every 22 units  → learn the rhythm
+    # Section 2 (x 270–512): alternating y=7/11, every 22  → practice angles
+    # Section 3 (x 550–784): y=9 tightly spaced, y=13 highs → speed run
+    {
+        'id': 6,
+        'name': 'Grapple Test Area',
+        'baseline_time': None,
+        'length': 820,
+        'sky_color':    ( 40, 180, 160),
+        'ground_color': ( 60, 160, 100),
+        'cars': [],
+        'helicopters': [
+            # Section 1 — uniform height, learn the rhythm
+            {'x':  22, 'y':  8}, {'x':  55, 'y':  8}, {'x':  88, 'y':  8},
+            {'x': 121, 'y':  8}, {'x': 154, 'y':  8}, {'x': 187, 'y':  8},
+            {'x': 220, 'y':  8},
+            # Section 2 — alternating heights, practice angles
+            {'x': 270, 'y':  7}, {'x': 292, 'y': 11},
+            {'x': 336, 'y':  7}, {'x': 358, 'y': 11},
+            {'x': 402, 'y':  7}, {'x': 424, 'y': 11},
+            {'x': 468, 'y':  7}, {'x': 490, 'y': 11},
+            # Section 3 — mixed highs
+            {'x': 550, 'y':  9}, {'x': 578, 'y': 13},
+            {'x': 606, 'y':  9}, {'x': 634, 'y': 13},
+            {'x': 662, 'y':  9}, {'x': 690, 'y': 13},
+            {'x': 718, 'y':  9}, {'x': 750, 'y': 13},
+            {'x': 778, 'y':  9},
+        ],
+        'charging_drones': [],
+        'shooting_drones': [],
+        'coins': [
+            {'x':  33, 'y': -14}, {'x':  77, 'y': -14}, {'x': 121, 'y': -14},
+            {'x': 165, 'y': -14}, {'x': 209, 'y': -14},
+            {'x': 281, 'y': -14}, {'x': 325, 'y': -14}, {'x': 369, 'y': -14},
+            {'x': 413, 'y': -14}, {'x': 457, 'y': -14}, {'x': 501, 'y': -14},
+            {'x': 559, 'y': -14}, {'x': 595, 'y': -14}, {'x': 631, 'y': -14},
+            {'x': 667, 'y': -14}, {'x': 703, 'y': -14}, {'x': 739, 'y': -14},
+            {'x': 775, 'y': -14},
+        ],
+    },
 ]
