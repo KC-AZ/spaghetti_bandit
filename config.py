@@ -31,5 +31,10 @@ class Config:
     GRAPPLE_REEL_MIN_LENGTH = 8.0    # below this rope length, no reel-in
     GRAPPLE_SLACK_MAX       = 16.0   # max rope length for slack phase; beyond this snaps taut immediately
 
+    # Launch Point
+    LAUNCH_SPEED      = 45.0   # units/s player is propelled on launch
+    LAUNCH_REEL_SPEED = 40.0   # units/s pull-in speed toward anchor before launch
+    LAUNCH_TRIGGER_DIST = 1.5  # rope length at which launch fires
+
     # Collectibles
     COIN_VALUE = 50

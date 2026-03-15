@@ -39,6 +39,9 @@ LEVELS = [
             {'x': 136, 'y': 10},
             {'x': 166, 'y':  9},
         ],
+        'launch_points': [
+            {'x': 15, 'y': 5},
+        ],
         'charging_drones': [],
         'shooting_drones': [],
         'coins': [
@@ -72,6 +75,9 @@ LEVELS = [
             {'x': 132, 'y':  8},
             {'x': 168, 'y': 10},
             {'x': 212, 'y':  9},
+        ],
+        'launch_points': [
+            {'x': 15, 'y': 5},
         ],
         'charging_drones': [],
         'shooting_drones': [
@@ -109,6 +115,9 @@ LEVELS = [
             {'x': 182, 'y':  9},
             {'x': 228, 'y': 10},
             {'x': 272, 'y':  8},
+        ],
+        'launch_points': [
+            {'x': 15, 'y': 5},
         ],
         'charging_drones': [
             {'x': 130, 'y': 12},
@@ -152,6 +161,9 @@ LEVELS = [
             {'x': 252, 'y':  9},
             {'x': 294, 'y': 11},
             {'x': 336, 'y':  8},
+        ],
+        'launch_points': [
+            {'x': 15, 'y': 5},
         ],
         'charging_drones': [
             {'x': 100, 'y': 12},
@@ -204,6 +216,9 @@ LEVELS = [
             {'x': 324, 'y': 10},
             {'x': 360, 'y':  9},
             {'x': 396, 'y': 11},
+        ],
+        'launch_points': [
+            {'x': 15, 'y': 5},
         ],
         'charging_drones': [
             {'x':  88, 'y': 12},
@@ -264,6 +279,10 @@ LEVELS = [
         ],
         'charging_drones': [],
         'shooting_drones': [],
+        'launch_points': [
+            {'x': 242, 'y':  9},   # end of section 1 — launches into section 2
+            {'x': 512, 'y': 11},   # end of section 2 — launches into section 3
+        ],
         'coins': [
             {'x':  33, 'y': -14}, {'x':  77, 'y': -14}, {'x': 121, 'y': -14},
             {'x': 165, 'y': -14}, {'x': 209, 'y': -14},

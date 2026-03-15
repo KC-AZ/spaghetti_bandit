@@ -49,14 +49,16 @@ class Player(Entity):
         self.coyote_timer    = 0.0
 
         # Grapple
-        self.grappling      = False
-        self.grapple_anchor = None
-        self.rope_length    = 0.0
-        self.rope_taut      = False
-        self.swing_angle    = 0.0
-        self.angular_vel    = 0.0
-        self.entry_vel_x    = 0.0
-        self.min_swing_y    = 0.0
+        self.grappling        = False
+        self.grapple_anchor   = None
+        self.rope_length      = 0.0
+        self.rope_taut        = False
+        self.swing_angle      = 0.0
+        self.angular_vel      = 0.0
+        self.entry_vel_x      = 0.0
+        self.min_swing_y      = 0.0
+        self.grapple_is_launch = False
+        self.launch_dir        = (1.0, 0.0)  # normalized (dx, dy) toward anchor
 
         # Parry
         self.parry_active   = False
@@ -144,7 +146,7 @@ class Player(Entity):
         if self.grappling:
             return
         best, best_d = None, GRAPPLE_RANGE
-        for ent in state.helicopters:
+        for ent in state.helicopters + state.launch_points:
             if not ent.enabled:
                 continue
             if ent.x <= self.x:
@@ -154,11 +156,37 @@ class Player(Entity):
                 best_d, best = d, ent
         if best is None:
             return
-        self.grapple_anchor = best
-        self.rope_length    = min(best_d, Config.GRAPPLE_SLACK_MAX)
-        self.grappling      = True
+        self.grapple_anchor    = best
+        self.rope_length       = min(best_d, Config.GRAPPLE_SLACK_MAX)
+        self.grappling         = True
+        self.grapple_is_launch = best.name == 'launch_point'
+        if self.grapple_is_launch:
+            dx = best.x - self.x
+            dy = best.y - self.y
+            mag = math.sqrt(dx * dx + dy * dy) or 1.0
+            self.launch_dir = (dx / mag, dy / mag)
 
-        if self.on_ground:
+        if self.on_ground and self.grapple_is_launch:
+            # Launch from ground: fire immediately in grapple direction
+            self.vel_x     = self.launch_dir[0] * Config.LAUNCH_SPEED
+            self.vel_y     = self.launch_dir[1] * Config.LAUNCH_SPEED
+            self.grappling = False
+            self.grapple_is_launch = False
+            self.grapple_anchor    = None
+        elif self.grapple_is_launch:
+            # Launch from air: go taut immediately at full rope length so the fast
+            # reel-in drags the player to the anchor, then fires the launch
+            self.rope_length = best_d
+            dx_snap = self.x - best.x
+            dy_snap = self.y - best.y
+            self.swing_angle = math.atan2(dy_snap, dx_snap)
+            self.angular_vel = 0.0
+            self.entry_vel_x = self.vel_x
+            self.min_swing_y = self.y
+            self.vel_x       = 0.0
+            self.vel_y       = 0.0
+            self.rope_taut   = True
+        elif self.on_ground:
             # Skip slack phase when standing — go taut immediately so the pendulum
             # repositions the player above the floor before the ground clamp fires
             dx = self.x - best.x
@@ -198,9 +226,10 @@ class Player(Entity):
                 self.vel_x = swing_vel_x
             self.vel_y = swing_vel_y
         # if still slack, vel_x/vel_y are already correct from free flight
-        self.grappling      = False
-        self.rope_taut      = False
-        self.grapple_anchor = None
+        self.grappling         = False
+        self.rope_taut         = False
+        self.grapple_anchor    = None
+        self.grapple_is_launch = False
         state.clear_rope()
 
     # ── Update ─────────────────────────────────────────────────────────────
@@ -314,6 +343,19 @@ class Player(Entity):
                 self.vel_y       = 0.0
                 self.rope_taut   = True
             state.update_rope(self, anchor)
+            return
+
+        # Taut — launch point: fast reel-in, fire when player reaches anchor
+        if self.grapple_is_launch:
+            self.rope_length = max(Config.LAUNCH_TRIGGER_DIST,
+                                   self.rope_length - Config.LAUNCH_REEL_SPEED * time.dt)
+            self.x = anchor.x + self.rope_length * math.cos(self.swing_angle)
+            self.y = anchor.y + self.rope_length * math.sin(self.swing_angle)
+            state.update_rope(self, anchor)
+            if self.rope_length <= Config.LAUNCH_TRIGGER_DIST:
+                self.vel_x = self.launch_dir[0] * Config.LAUNCH_SPEED
+                self.vel_y = self.launch_dir[1] * Config.LAUNCH_SPEED
+                self.release_grapple()
             return
 
         # Taut pendulum physics — reel in unless already close to the helicopter

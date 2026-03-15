@@ -8,7 +8,7 @@ import ui
 from config import GROUND_Y, CAMERA_OFFSET
 from audio import AudioManager
 from player import Player
-from obstacles import Coin, Helicopter
+from obstacles import Coin, Helicopter, LaunchPoint
 from enemies import ChargingDrone, ShootingDrone
 from level_data import LEVELS
 
@@ -56,8 +56,8 @@ def complete_level():
 # ── Level management ───────────────────────────────────────────────────────
 def _clear_level_entities():
     for lst in (state.cars, state.coins_list, state.helicopters,
-                state.charging_drones, state.shooting_drones,
-                state.drone_projectiles):
+                state.launch_points, state.charging_drones,
+                state.shooting_drones, state.drone_projectiles):
         for e in lst:
             state._destroy(e)
         lst.clear()
@@ -75,6 +75,7 @@ def load_level(level_id):
     level = LEVELS[level_id - 1]
     state.current_level  = level_id
     state.level_timer    = 0.0
+    state.timer_started  = False
     state.level_complete = False
     state.num_coins      = 0
 
@@ -82,6 +83,8 @@ def load_level(level_id):
 
     for h in level.get('helicopters', []):
         state.helicopters.append(Helicopter(h['x'], h['y']))
+    for lp in level.get('launch_points', []):
+        state.launch_points.append(LaunchPoint(lp['x'], lp['y']))
     for d in level.get('charging_drones', []):
         state.charging_drones.append(ChargingDrone(d['x'], d['y']))
     for d in level.get('shooting_drones', []):
@@ -158,6 +161,10 @@ def input(key):
             state._destroy(state.pause_panel)
             state.pause_panel = None
 
+    if (state.game_running and not state.paused and not state.timer_started
+            and key in ('space', 'left shift', 'right shift', 'shift', 'a', 'd', 's')):
+        state.timer_started = True
+
     if key == 'space' and state.game_running and not state.paused:
         state.player.do_jump()
 
@@ -186,7 +193,8 @@ class GameManager(Entity):
         if state.paused or not state.game_running:
             return
 
-        state.level_timer += time.dt
+        if state.timer_started:
+            state.level_timer += time.dt
         ui.update_hud()
 
         # Finish line — position check is reliable in orthographic 2D

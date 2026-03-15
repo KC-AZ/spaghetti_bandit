@@ -8,7 +8,12 @@
       "Bash(git config:*)",
       "Bash(git commit:*)",
       "Bash(git add:*)",
-      "Bash(python3 -c \":*)"
+      "Bash(python3 -c \":*)",
+      "Bash(pip show:*)",
+      "Bash(pip list:*)",
+      "Bash(/home/zack/spaghetti_bandit/venv/bin/pip show:*)",
+      "Bash(venv/bin/pip install:*)",
+      "Bash(venv/bin/pyinstaller SpaghettiBandit.spec)"
     ]
   }
 }

@@ -20,6 +20,7 @@ finish_line       = None
 cars              = []
 coins_list        = []
 helicopters       = []
+launch_points     = []
 charging_drones   = []
 shooting_drones   = []
 drone_projectiles = []
@@ -27,6 +28,7 @@ drone_projectiles = []
 # ── Game / level state ─────────────────────────────────────────────────────
 current_level  = 1
 level_timer    = 0.0
+timer_started  = False
 level_complete = False
 num_coins      = 0
 paused         = False

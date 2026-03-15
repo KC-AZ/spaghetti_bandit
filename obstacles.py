@@ -130,3 +130,59 @@ class Helicopter(Entity):
                 (dist - GRAPPLE_RANGE) / (_HELI_DETECT - GRAPPLE_RANGE)))
         r = _HELI_INNER_R + t * (_HELI_OUTER_MAX - _HELI_INNER_R)
         self._outer.scale = (2 * r / self._SW, 2 * r / self._SH, 1)
+
+
+# ── Launch Point ────────────────────────────────────────────────────────────
+class LaunchPoint(Entity):
+    _SW = 2.0   # body scale x
+    _SH = 0.5   # body scale y — flat pad shape
+
+    def __init__(self, x, y):
+        self.base_y = y
+        self.bob_t  = 0.0
+        super().__init__(
+            model='quad', color=color.rgb32(220, 120, 20),   # orange
+            scale=(self._SW, self._SH),
+            position=(x, y, 0),
+            name='launch_point',
+            unlit=True,
+        )
+        # Chevron arrow pointing right — suggests launch direction
+        Entity(parent=self, model='quad', color=color.rgb32(255, 220, 50),
+               scale=(0.5, 0.5), position=(0, 0, -0.01), rotation_z=45)
+
+        # Inner static dot
+        ir = _HELI_INNER_R
+        self._inner = Entity(
+            parent=self,
+            model=_disc_mesh(),
+            color=color.white,
+            scale=(2 * ir / self._SW, 2 * ir / self._SH, 1),
+            position=(0, 0, -0.05),
+            unlit=True,
+        )
+
+        # Outer reactive ring
+        self._outer = Entity(
+            parent=self,
+            model=_ring_mesh(),
+            color=color.rgb32(255, 180, 50),   # orange-yellow ring
+            scale=(2 * _HELI_OUTER_MAX / self._SW,
+                   2 * _HELI_OUTER_MAX / self._SH, 1),
+            position=(0, 0, -0.1),
+            unlit=True,
+        )
+
+    def update(self):
+        if state.paused or not state.game_running:
+            return
+        self.bob_t += time.dt * 2
+        self.y      = self.base_y + math.sin(self.bob_t) * 0.1
+
+        # Shrink outer ring as player closes in on grapple range
+        dist = math.sqrt((state.player.x - self.x) ** 2 +
+                         (state.player.y - self.y) ** 2)
+        t = max(0.0, min(1.0,
+                (dist - GRAPPLE_RANGE) / (_HELI_DETECT - GRAPPLE_RANGE)))
+        r = _HELI_INNER_R + t * (_HELI_OUTER_MAX - _HELI_INNER_R)
+        self._outer.scale = (2 * r / self._SW, 2 * r / self._SH, 1)
